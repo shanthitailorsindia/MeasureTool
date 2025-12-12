@@ -64,6 +64,9 @@ const App: React.FC = () => {
   });
   
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+
+  // Check for admin flag in URL to show dev tools
+  const showAdminTools = new URLSearchParams(window.location.search).get('admin') === 'true';
   
   // Step Indices
   const measurementStepsCount = MEASUREMENT_STEPS.length;
@@ -497,12 +500,14 @@ const App: React.FC = () => {
       </div>
        <footer className="text-center mt-12 text-gray-400 text-sm">
           <p>&copy; {new Date().getFullYear()} Shanthi Tailors Pvt. Ltd. All rights reserved.</p>
-          {/* Audio Manager (Generator + Uploader) */}
-          <AudioAssetsGenerator 
-            onLoadFiles={(files) => {
-                files.forEach(f => handleAddToCache(f.name.replace('.wav', ''), f.data));
-            }}
-          />
+          {/* Audio Manager (Generator + Uploader) - Only shown if ?admin=true is in URL */}
+          {showAdminTools && (
+            <AudioAssetsGenerator 
+                onLoadFiles={(files) => {
+                    files.forEach(f => handleAddToCache(f.name.replace('.wav', ''), f.data));
+                }}
+            />
+          )}
       </footer>
     </div>
   );
