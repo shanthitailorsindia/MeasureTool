@@ -21,7 +21,7 @@ interface MeasurementStepProps {
 // --- Audio Utility Functions ---
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64);
+  const binaryString = atob(base64.split(',')[1] || base64); // Handle Data URL prefix
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {
@@ -188,7 +188,7 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
         });
 
         const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!base64Audio) throw new Error("Empty audio response");
+        if (!base64Audio) throw new Error("Empty audio response from Gemini");
 
         // 3. Process & Cache
         const pcmArrayBuffer = base64ToArrayBuffer(base64Audio);
@@ -201,9 +201,20 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
         return await audioContext.decodeAudioData(wavArrayBuffer);
     };
 
-    // Helper: Fetch a static audio file from the server
-    const fetchStaticAudio = async (url: string): Promise<AudioBuffer> => {
+    // Helper: Fetch a static audio file
+    const fetchStaticAudio = async (id: string): Promise<AudioBuffer> => {
          if (!audioContext) throw new Error("No AudioContext");
+
+         // 1. Check Virtual Cache (Loaded via "Load Files" button)
+         if (audioCache[id]) {
+            // It's a Data URL string, fetch reads it automatically
+            const response = await fetch(audioCache[id]);
+            const arrayBuffer = await response.arrayBuffer();
+            return await audioContext.decodeAudioData(arrayBuffer);
+         }
+
+         // 2. Check Real Filesystem (For real server deployment)
+         const url = `/audio/${id}.wav`;
          const response = await fetch(url);
          if (!response.ok) throw new Error(`Static file not found: ${response.statusText}`);
          const arrayBuffer = await response.arrayBuffer();
@@ -223,12 +234,12 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
             if (!audioContext) throw new Error("Audio Context not ready");
 
             // --- STRATEGY: Hybrid Audio ---
-            // 1. We try to fetch the Static Instruction WAV first.
+            // 1. We try to fetch the Static Instruction WAV first (Check Cache -> Check Server)
             // 2. We concurrently fetch/generate the Personalized Intro via API.
             // 3. If static file exists, we play [Intro] -> [Static].
             // 4. If static file is missing (404), we fallback to generating the FULL text via API.
 
-            const staticFileUrl = `/audio/${measurement.id}.wav`;
+            const staticId = measurement.id;
             
             // Construct Texts
             const introText = measurementIndex === 0
@@ -243,8 +254,7 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
 
             try {
                 // Start fetching static audio (Instructions)
-                // Note: We use a lightweight fetch to check existence or just rely on try/catch
-                const instructionPromise = fetchStaticAudio(staticFileUrl);
+                const instructionPromise = fetchStaticAudio(staticId);
                 
                 // Start generating/fetching intro audio (Personalized)
                 const introPromise = generateGeminiAudio(introText, introCacheKey);
@@ -256,7 +266,7 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
                 await playAudioSequence([introBuffer, instructionBuffer]);
 
             } catch (hybridError) {
-                console.warn(`Hybrid audio failed for ${measurement.id} (likely missing .wav file). Falling back to full API generation.`);
+                console.warn(`Hybrid audio failed for ${measurement.id} (missing file). Falling back to full API generation.`);
                 
                 // Fallback: Generate everything via Gemini
                 const fullBuffer = await generateGeminiAudio(fullTextFallback, fullCacheKey);

@@ -482,7 +482,7 @@ const App: React.FC = () => {
       <div className="w-full max-w-3xl mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Shanthi Tailors - Measurement Tool</h1>
-          <p className="text-gray-500 mt-2">A digital guide to your perfect dance costume.</p>
+          <p className="text-gray-600 mt-2">A digital guide to your perfect dance costume.</p>
         </header>
 
         {showProgressBar && (
@@ -497,8 +497,12 @@ const App: React.FC = () => {
       </div>
        <footer className="text-center mt-12 text-gray-400 text-sm">
           <p>&copy; {new Date().getFullYear()} Shanthi Tailors Pvt. Ltd. All rights reserved.</p>
-          {/* Temporary Generator for Admins/Devs */}
-          <AudioAssetsGenerator />
+          {/* Audio Manager (Generator + Uploader) */}
+          <AudioAssetsGenerator 
+            onLoadFiles={(files) => {
+                files.forEach(f => handleAddToCache(f.name.replace('.wav', ''), f.data));
+            }}
+          />
       </footer>
     </div>
   );
