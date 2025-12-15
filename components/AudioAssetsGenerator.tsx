@@ -133,27 +133,34 @@ export const AudioAssetsGenerator: React.FC<AudioAssetsGeneratorProps> = ({ onLo
     <div className="mt-12 p-6 bg-gray-50 border-t border-gray-200">
         <h3 className="text-lg font-bold text-gray-800 mb-2">Audio Asset Manager</h3>
         
-        <div className="flex flex-col md:flex-row gap-8 justify-center items-start text-left max-w-2xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-8 justify-center items-start text-left max-w-4xl mx-auto">
             
             {/* Generator Column */}
-            <div className="flex-1">
-                <h4 className="font-semibold text-gray-700 mb-1">1. Generate & Download</h4>
-                <p className="text-xs text-gray-500 mb-3">Create static audio files for all steps using Gemini.</p>
+            <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h4 className="font-semibold text-gray-700 mb-2">1. Generate & Download</h4>
+                <p className="text-xs text-gray-500 mb-4">
+                    This will use your API key to generate audio files for all steps and download them to your computer.
+                </p>
                 <button 
                     onClick={generateAll}
                     disabled={generating}
-                    className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:opacity-50 text-sm font-medium w-full"
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium w-full mb-3"
                 >
                     {generating ? `Generating (${progress.current}/${progress.total})...` : 'Generate Files'}
                 </button>
+                <div className="text-xs bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200">
+                    <strong>DEPLOYMENT INSTRUCTION:</strong><br/>
+                    After downloading, move these files to your project folder at: <br/>
+                    <code className="bg-yellow-100 px-1 rounded">public/audio/</code> <br/>
+                    Then redeploy your app.
+                </div>
             </div>
 
             {/* Uploader Column */}
-            <div className="flex-1">
-                 <h4 className="font-semibold text-gray-700 mb-1">2. Load Files (Hybrid Mode)</h4>
-                 <p className="text-xs text-gray-500 mb-3">
-                    Upload the downloaded files here to test the app without a server. 
-                    (For production, put files in <code>public/audio/</code>)
+            <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                 <h4 className="font-semibold text-gray-700 mb-2">2. Load Files (Test Mode)</h4>
+                 <p className="text-xs text-gray-500 mb-4">
+                    Upload the downloaded files here to test them immediately in this browser session without redeploying.
                  </p>
                  <label className="block">
                     <span className="sr-only">Choose files</span>
@@ -174,7 +181,7 @@ export const AudioAssetsGenerator: React.FC<AudioAssetsGeneratorProps> = ({ onLo
         </div>
         
         {progress.log && (
-            <div className="mt-4 text-sm text-indigo-600 font-mono">
+            <div className="mt-4 text-sm text-indigo-600 font-mono text-center">
                 {progress.log}
             </div>
         )}

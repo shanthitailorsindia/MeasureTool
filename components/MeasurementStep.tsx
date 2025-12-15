@@ -214,9 +214,16 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
          }
 
          // 2. Check Real Filesystem (For real server deployment)
-         const url = `/audio/${id}.wav`;
+         // Using relative path 'audio/' instead of absolute '/audio/' to support subfolder deployments
+         const url = `audio/${id}.wav`;
          const response = await fetch(url);
-         if (!response.ok) throw new Error(`Static file not found: ${response.statusText}`);
+         
+         if (!response.ok) {
+            console.error(`Audio file fetch failed. Tried fetching: ${window.location.href}${url}`);
+            console.error(`Ensure your file structure is: project_root/public/audio/${id}.wav`);
+            throw new Error(`Static file not found at ${url}: ${response.statusText}`);
+         }
+         
          const arrayBuffer = await response.arrayBuffer();
          return await audioContext.decodeAudioData(arrayBuffer);
     };
