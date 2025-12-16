@@ -52,48 +52,66 @@ function createWavBlob(pcmData: ArrayBuffer, sampleRate: number = 24000): Blob {
 export const AudioAssetsGenerator: React.FC<AudioAssetsGeneratorProps> = ({ onLoadFiles }) => {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState<{current: number, total: number, log: string}>({ current: 0, total: MEASUREMENT_STEPS.length, log: '' });
+  const [selectedId, setSelectedId] = useState(MEASUREMENT_STEPS[0].id);
 
-  const generateAll = async () => {
-    if (!process.env.API_KEY) {
+  const generateFile = async (step: typeof MEASUREMENT_STEPS[0]) => {
+     if (!process.env.API_KEY) {
         alert("API Key missing");
         return;
     }
-
-    setGenerating(true);
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: step.audioTip }] }],
+            config: { 
+                responseModalities: ['AUDIO'] as any,
+                speechConfig: {
+                    voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
+                },
+            }
+        });
+        
+        const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (base64) {
+            const wavBlob = createWavBlob(base64ToArrayBuffer(base64), 24000);
+            const url = URL.createObjectURL(wavBlob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${step.id}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    } catch(e) {
+        console.error(`Error generating ${step.id}:`, e);
+        throw e;
+    }
+  };
+
+  const generateSingle = async () => {
+    setGenerating(true);
+    setProgress({ current: 0, total: 1, log: `Generating ${selectedId}...` });
+    const step = MEASUREMENT_STEPS.find(s => s.id === selectedId);
+    if (step) {
+        await generateFile(step);
+    }
+    setGenerating(false);
+    setProgress(p => ({ ...p, log: `Generated ${selectedId}.wav` }));
+  };
+
+  const generateAll = async () => {
+    setGenerating(true);
     
     for (let i = 0; i < MEASUREMENT_STEPS.length; i++) {
         const step = MEASUREMENT_STEPS[i];
         try {
             setProgress({ current: i + 1, total: MEASUREMENT_STEPS.length, log: `Generating ${step.name}...` });
-            
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash-preview-tts",
-                contents: [{ parts: [{ text: step.audioTip }] }],
-                config: { 
-                    responseModalities: ['AUDIO'] as any,
-                    speechConfig: {
-                        voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
-                    },
-                }
-            });
-            
-            const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-            if (base64) {
-                const wavBlob = createWavBlob(base64ToArrayBuffer(base64), 24000);
-                const url = URL.createObjectURL(wavBlob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${step.id}.wav`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-            
-            await new Promise(r => setTimeout(r, 800));
-            
+            await generateFile(step);
+            await new Promise(r => setTimeout(r, 800)); // Rate limit buffer
         } catch(e) {
             console.error(`Error generating ${step.id}:`, e);
         }
@@ -136,32 +154,50 @@ export const AudioAssetsGenerator: React.FC<AudioAssetsGeneratorProps> = ({ onLo
         <div className="flex flex-col md:flex-row gap-8 justify-center items-start text-left max-w-4xl mx-auto">
             
             {/* Generator Column */}
-            <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm w-full">
                 <h4 className="font-semibold text-gray-700 mb-2">1. Generate & Download</h4>
                 <p className="text-xs text-gray-500 mb-4">
-                    This will use your API key to generate audio files for all steps and download them to your computer.
+                    Generate audio files and upload them to <code>public/audio/</code> in your GitHub repo.
                 </p>
+                
+                <div className="flex gap-2 mb-4">
+                     <select 
+                        value={selectedId} 
+                        onChange={(e) => setSelectedId(e.target.value)}
+                        className="flex-1 text-sm border-gray-300 rounded p-2"
+                     >
+                        {MEASUREMENT_STEPS.map(s => (
+                            <option key={s.id} value={s.id}>{s.id}</option>
+                        ))}
+                     </select>
+                     <button 
+                        onClick={generateSingle}
+                        disabled={generating}
+                        className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-xs font-bold"
+                    >
+                        Generate One
+                    </button>
+                </div>
+
                 <button 
                     onClick={generateAll}
                     disabled={generating}
                     className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium w-full mb-3"
                 >
-                    {generating ? `Generating (${progress.current}/${progress.total})...` : 'Generate Files'}
+                    {generating && progress.total > 1 ? `Generating All (${progress.current}/${progress.total})...` : 'Generate All Files'}
                 </button>
+                
                 <div className="text-sm bg-yellow-50 text-yellow-800 p-3 rounded border border-yellow-200">
-                    <strong>⚠️ CRITICAL DEPLOYMENT STEP:</strong><br/>
-                    1. Create a folder named <code>public</code> in your project root.<br/>
-                    2. Inside it, create an <code>audio</code> folder.<br/>
-                    3. Move all downloaded files there.<br/><br/>
-                    Final Path: <code className="bg-yellow-100 px-1 rounded font-bold">public/audio/file.wav</code>
+                    <strong>⚠️ DEPLOYMENT STEP:</strong><br/>
+                    Move downloaded files to: <code className="bg-yellow-100 px-1 rounded font-bold">public/audio/</code> in your GitHub repo.
                 </div>
             </div>
 
             {/* Uploader Column */}
-            <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex-1 bg-white p-4 rounded-lg border border-gray-200 shadow-sm w-full">
                  <h4 className="font-semibold text-gray-700 mb-2">2. Load Files (Test Mode)</h4>
                  <p className="text-xs text-gray-500 mb-4">
-                    Upload the downloaded files here to test them immediately in this browser session without redeploying.
+                    Upload .wav files here to test immediately without redeploying.
                  </p>
                  <label className="block">
                     <span className="sr-only">Choose files</span>

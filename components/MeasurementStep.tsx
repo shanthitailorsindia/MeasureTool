@@ -219,7 +219,7 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
          const response = await fetch(url);
          
          if (!response.ok) {
-            console.warn(`Audio fetch failed for ${url} (Status: ${response.status})`);
+            // Do not throw immediately, just return null so the logic can decide to use fallback
             throw new Error(`MISSING_FILE: ${url}`);
          }
          
@@ -239,14 +239,12 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
         try {
             if (!audioContext) throw new Error("Audio Context not ready");
             
-            // Resume context if needed (browsers block autoplay)
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
 
             const staticId = measurement.id;
             
-            // Construct Texts
             const introText = measurementIndex === 0
                 ? `Hi ${dancerName}, let's start with ${measurement.name}.`
                 : `Next is ${measurement.name}.`;
@@ -256,88 +254,81 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
             const introCacheKey = `intro_${dancerName}_${measurement.id}`;
             const fullCacheKey = `full_${dancerName}_${measurement.id}`;
 
-            // Check if we have an API key available.
             const hasApiKey = process.env.API_KEY && process.env.API_KEY.length > 0;
 
-            // --- STRATEGY ---
-            // 1. Fetch Static Audio (from Hardcoded URL or File).
-            // 2. Try Fetching Personalized Intro (if API Key exists).
-            // 3. Combine.
-
-            // Wrapped Static Fetch
+            // --- STRATEGY: Optimized Latency ---
+            
+            // 1. Start fetching the Static File (Main Instruction)
             const fetchStaticPromise = async () => {
                 try {
-                    // Pass the audioUrl from the measurement object
-                    const buffer = await fetchStaticAudio(staticId, measurement.audioUrl);
-                    return buffer;
+                    return await fetchStaticAudio(staticId, measurement.audioUrl);
                 } catch (e: any) {
-                    if (e.message && e.message.includes('MISSING_FILE')) {
-                        console.error(`Audio Error: Could not find audio at ${measurement.audioUrl || `/audio/${staticId}.wav`}`);
-                        return 'missing_file'; 
-                    }
-                    console.warn(`Static file fetch failed for ${staticId}.`, e);
+                    if (e.message && e.message.includes('MISSING_FILE')) return 'missing_file';
                     return null;
                 }
             };
 
-            // Wrapped Intro Gen
+            // 2. Start fetching Personalized Intro with a STRICT TIMEOUT
+            // If the AI takes > 1.5 seconds to say "Hi Siva", we skip it. 
+            // We don't want the user waiting too long just for a greeting.
             const fetchIntroPromise = async () => {
-                if (!hasApiKey) return null; // Skip if no key
+                if (!hasApiKey) return null;
                 try {
                     return await generateGeminiAudio(introText, introCacheKey);
                 } catch (e) {
-                    // Fail silently on intro generation, we still want the main instructions
-                    console.warn("Intro generation failed (skipping intro):", e);
                     return null;
                 }
             };
 
-            // Execute in parallel
+            const withTimeout = (promise: Promise<any>, ms: number) => {
+                return Promise.race([
+                    promise,
+                    new Promise(resolve => setTimeout(() => resolve(null), ms))
+                ]);
+            };
+
+            // Run in parallel
             const [staticResult, introBuffer] = await Promise.all([
                 fetchStaticPromise(),
-                fetchIntroPromise()
+                withTimeout(fetchIntroPromise(), 1500) // 1.5s Timeout for intro
             ]);
 
-            // DECISION LOGIC
-            
-            // Scenario 1: File is explicitly missing (404)
+            // Scenario 1: Missing Static File (e.g., aroundAboveBust.wav not on server)
             if (staticResult === 'missing_file') {
-                 // If we have an API key, we might be able to fallback to full generation?
                  if (hasApiKey) {
-                     console.log("File missing, but API key exists. Attempting full generation fallback.");
+                     // If static file is missing, we MUST generate the full text.
+                     // We can't timeout this one or we'll have silence.
+                     const fullBuffer = await generateGeminiAudio(fullTextFallback, fullCacheKey);
+                     await playAudioSequence([fullBuffer]);
+                     return;
                  } else {
                      setErrorState('missing_file');
                      return;
                  }
             }
 
-            // Scenario 2: We have the static file (Success)
+            // Scenario 2: Static File Exists
             if (staticResult && typeof staticResult !== 'string') {
                 const staticBuffer = staticResult as AudioBuffer;
                 const playlist: AudioBuffer[] = [];
-                // If we also managed to get the personalized intro, add it first
+                
+                // Only add intro if it finished within the timeout
                 if (introBuffer) {
                     playlist.push(introBuffer);
                 }
-                // Always add the main instruction
-                playlist.push(staticBuffer);
                 
+                playlist.push(staticBuffer);
                 await playAudioSequence(playlist);
                 return;
             }
 
-            // Scenario 3: No static file -> Fallback to Full API Generation
-            if (hasApiKey) {
+            // Scenario 3: General Fallback
+             if (hasApiKey) {
                  const fullBuffer = await generateGeminiAudio(fullTextFallback, fullCacheKey);
                  await playAudioSequence([fullBuffer]);
                  return;
             } else {
-                // Scenario 4: No file AND no API key.
-                if (staticResult === 'missing_file') {
-                    setErrorState('missing_file');
-                } else {
-                    setErrorState('generic');
-                }
+                setErrorState('generic');
             }
 
         } catch (error: any) {

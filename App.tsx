@@ -193,11 +193,11 @@ const App: React.FC = () => {
     };
 
     try {
-        // Use gemini-2.0-flash-exp as requested
-        const result = await generateWithModel('gemini-2.0-flash-exp');
+        // Use gemini-3-pro-preview as the primary reasoning model
+        const result = await generateWithModel('gemini-3-pro-preview');
         setAnalysisResult(result);
     } catch (error: any) {
-        console.warn("Gemini analysis failed, trying fallback:", error);
+        console.warn("Gemini 3 Pro analysis failed, trying fallback:", error);
         
         // If error is related to Quota or Billing, skip straight to local analysis
         if (error.toString().includes("429") || error.toString().includes("RESOURCE_EXHAUSTED")) {
@@ -207,6 +207,7 @@ const App: React.FC = () => {
         }
 
         try {
+            // Fallback to gemini-2.5-flash which is generally faster and stable
             const result = await generateWithModel('gemini-2.5-flash');
             setAnalysisResult(result);
         } catch (fallbackError) {
@@ -257,6 +258,10 @@ const App: React.FC = () => {
     measurements.forEach(m => {
         summary += `- ${m.name}: ${m.value}${nl}`;
     });
+
+    if (analysisResult) {
+        summary += `${nl}*Tailor's Feedback:*${nl}${analysisResult}${nl}`;
+    }
     
     return summary;
   }
@@ -332,6 +337,28 @@ const App: React.FC = () => {
         theme: 'grid',
         headStyles: { fillColor: '#4F46E5' }
     });
+
+    if (analysisResult) {
+        let finalY = (doc as any).lastAutoTable?.finalY || yPos + 20;
+        finalY += 15;
+
+        // Check for page break
+        if (finalY > 270) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Tailor's Analysis Feedback", 14, finalY);
+        
+        finalY += 7;
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        
+        const splitText = doc.splitTextToSize(analysisResult, 180);
+        doc.text(splitText, 14, finalY);
+    }
     
     return doc;
   };
