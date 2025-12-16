@@ -18,10 +18,6 @@ import {
   SleeveLengthImage
 } from './components/MeasurementImages';
 
-// Base URL for the GitHub Raw content. 
-// If you move your files, update this or the individual audioUrl fields below.
-const GITHUB_AUDIO_BASE = "https://raw.githubusercontent.com/shanthitailorsindia/MeasureTool/main/audio";
-
 export const MEASUREMENT_STEPS: Measurement[] = [
   // For Pants/Skirt (Previously Dance Dress)
   {
@@ -31,7 +27,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: UpToKneeLengthImage,
     category: 'For Pants/Skirt',
     audioTip: 'Measure from your natural waist, down to the top of your knee cap.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/upToKneeLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/upToKneeLength.wav?v=1765883449'
   },
   {
     id: 'skirtLength',
@@ -40,7 +36,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: SkirtLengthImage,
     category: 'For Pants/Skirt',
     audioTip: 'Measure from your waist down to where you want the skirt to end.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/skirtLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/skirtLength.wav?v=1765883449'
   },
   {
     id: 'fullLength',
@@ -49,7 +45,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: FullLengthImage,
     category: 'For Pants/Skirt',
     audioTip: 'Start at your navel line and measure straight down to the ankle bone.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/fullLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/fullLength.wav?v=1765883449'
   },
   {
     id: 'aroundHip',
@@ -58,7 +54,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: AroundHipImage,
     category: 'For Pants/Skirt',
     audioTip: 'Wrap the tape around the fullest part of your hips, keeping it level.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/aroundHip.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/aroundHip.wav?v=1765883449'
   },
   {
     id: 'waist',
@@ -67,7 +63,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: WaistImage,
     category: 'For Pants/Skirt',
     audioTip: 'Find the narrowest part of your torso and measure around it.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/waist.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/waist.wav?v=1765883449'
   },
   {
     id: 'aroundAnkleTight',
@@ -76,7 +72,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: AroundAnkleTightImage,
     category: 'For Pants/Skirt',
     audioTip: 'Wrap the tape snugly around your ankle bone.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/aroundAnkleTight.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/aroundAnkleTight.wav?v=1765883449'
   },
   {
     id: 'upperClothLength',
@@ -85,7 +81,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: UpperClothLengthImage,
     category: 'For Pants/Skirt',
     audioTip: 'Measure diagonally from your left waist, where you wear your pants, up to your right shoulder.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/upperClothLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/upperClothLength.wav?v=1765883450'
   },
   // For Choli/Blouse
   {
@@ -95,7 +91,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: BackLengthImage,
     category: 'For Choli/Blouse',
     audioTip: 'Measure from your waist down to the fullest part of your seat.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/backLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/backLength.wav?v=1765883449'
   },
   {
     id: 'shoulderToBustPoint',
@@ -104,7 +100,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: ShoulderToBustPointImage,
     category: 'For Choli/Blouse',
     audioTip: 'Measure from the top of your shoulder straight down to the tip of your bust.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/shoulderToBustPoint.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/shoulderToBustPoint.wav?v=1765883450'
   },
   {
     id: 'shoulderToBelowBust',
@@ -113,7 +109,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: ShoulderToBelowBustImage,
     category: 'For Choli/Blouse',
     audioTip: 'Measure from the top of your shoulder down to the band of your bra.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/shoulderToBelowBust.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/shoulderToBelowBust.wav?v=1765883449'
   },
   {
     id: 'blouseFullLength',
@@ -122,7 +118,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: BlouseFullLengthImage,
     category: 'For Choli/Blouse',
     audioTip: 'From the top of your shoulder, measure down to where you want the blouse to end.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/blouseFullLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/blouseFullLength.wav?v=1765883449'
   },
   {
     id: 'aroundAboveBust',
@@ -131,7 +127,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: AroundAboveBustImage,
     category: 'For Choli/Blouse',
     audioTip: 'Measure around your body, high up under your armpits.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/aroundAboveBust.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/aroundAboveBust.wav?v=1765883375'
   },
   {
     id: 'aroundOnBust',
@@ -140,7 +136,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: AroundOnBustImage,
     category: 'For Choli/Blouse',
     audioTip: 'Wrap the tape around the fullest part of your bust, keeping it level.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/aroundOnBust.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/aroundOnBust.wav?v=1765883449'
   },
   {
     id: 'sleeveAround',
@@ -149,7 +145,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: SleeveAroundImage,
     category: 'For Choli/Blouse',
     audioTip: 'With your arm relaxed, measure around the widest part of your bicep.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/sleeveAround.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/sleeveAround.wav?v=1765883450'
   },
   {
     id: 'centerBackToShoulder',
@@ -158,7 +154,7 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: CenterBackToShoulderImage,
     category: 'For Choli/Blouse',
     audioTip: 'Measure from the prominent bone at the base of your neck to the edge of your shoulder.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/centerBackToShoulder.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/centerBackToShoulder.wav?v=1765883449'
   },
   {
     id: 'sleeveLength',
@@ -167,6 +163,6 @@ export const MEASUREMENT_STEPS: Measurement[] = [
     imageComponent: SleeveLengthImage,
     category: 'For Choli/Blouse',
     audioTip: 'Measure from the edge of your shoulder down your arm to your desired sleeve length.',
-    audioUrl: `${GITHUB_AUDIO_BASE}/sleeveLength.wav`
+    audioUrl: 'https://cdn.shopify.com/s/files/1/0738/4265/5537/files/sleeveLength.wav?v=1765883449'
   },
 ];

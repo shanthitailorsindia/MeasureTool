@@ -532,12 +532,14 @@ const App: React.FC = () => {
        <footer className="text-center mt-12 text-gray-400 text-sm pb-8">
           <p className="mb-4">&copy; {new Date().getFullYear()} Shanthi Tailors Pvt. Ltd. All rights reserved.</p>
           
-          <button 
-            onClick={() => setShowAudioTools(!showAudioTools)}
-            className="text-xs text-indigo-400 hover:text-indigo-600 underline"
-          >
-            {showAudioTools ? 'Hide Audio Manager' : 'Manage Audio Assets'}
-          </button>
+          {adminFlag && (
+            <button 
+                onClick={() => setShowAudioTools(!showAudioTools)}
+                className="text-xs text-indigo-400 hover:text-indigo-600 underline"
+            >
+                {showAudioTools ? 'Hide Audio Manager' : 'Manage Audio Assets'}
+            </button>
+          )}
 
           {/* Audio Manager (Generator + Uploader) */}
           {showAudioTools && (
