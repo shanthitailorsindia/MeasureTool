@@ -184,6 +184,9 @@ const App: React.FC = () => {
     `;
 
     const generateWithModel = async (modelName: string) => {
+        if (!process.env.API_KEY) {
+            throw new Error("API Key is missing. Check your environment variables.");
+        }
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: modelName,
@@ -193,11 +196,11 @@ const App: React.FC = () => {
     };
 
     try {
-        // Use gemini-3-pro-preview as the primary reasoning model
-        const result = await generateWithModel('gemini-3-pro-preview');
+        // Use gemini-2.5-flash as the primary model (more stable and faster)
+        const result = await generateWithModel('gemini-2.5-flash');
         setAnalysisResult(result);
     } catch (error: any) {
-        console.warn("Gemini 3 Pro analysis failed, trying fallback:", error);
+        console.warn("Gemini Flash analysis failed, trying fallback:", error);
         
         // If error is related to Quota or Billing, skip straight to local analysis
         if (error.toString().includes("429") || error.toString().includes("RESOURCE_EXHAUSTED")) {
@@ -207,11 +210,11 @@ const App: React.FC = () => {
         }
 
         try {
-            // Fallback to gemini-2.5-flash which is generally faster and stable
-            const result = await generateWithModel('gemini-2.5-flash');
+            // Fallback to gemini-3-pro-preview if flash fails
+            const result = await generateWithModel('gemini-3-pro-preview');
             setAnalysisResult(result);
         } catch (fallbackError) {
-            console.error("Fallback to Gemini Flash also failed, using local logic:", fallbackError);
+            console.error("Fallback to Gemini Pro also failed, using local logic:", fallbackError);
             const localResult = performLocalAnalysis(measurements, dancerName);
             setAnalysisResult(localResult);
         }
