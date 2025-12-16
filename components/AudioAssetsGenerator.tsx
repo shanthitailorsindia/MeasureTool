@@ -148,11 +148,12 @@ export const AudioAssetsGenerator: React.FC<AudioAssetsGeneratorProps> = ({ onLo
                 >
                     {generating ? `Generating (${progress.current}/${progress.total})...` : 'Generate Files'}
                 </button>
-                <div className="text-xs bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200">
-                    <strong>DEPLOYMENT INSTRUCTION:</strong><br/>
-                    After downloading, move these files to your project folder at: <br/>
-                    <code className="bg-yellow-100 px-1 rounded">public/audio/</code> <br/>
-                    Then redeploy your app.
+                <div className="text-sm bg-yellow-50 text-yellow-800 p-3 rounded border border-yellow-200">
+                    <strong>⚠️ CRITICAL DEPLOYMENT STEP:</strong><br/>
+                    1. Create a folder named <code>public</code> in your project root.<br/>
+                    2. Inside it, create an <code>audio</code> folder.<br/>
+                    3. Move all downloaded files there.<br/><br/>
+                    Final Path: <code className="bg-yellow-100 px-1 rounded font-bold">public/audio/file.wav</code>
                 </div>
             </div>
 

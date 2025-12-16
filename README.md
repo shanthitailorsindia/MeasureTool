@@ -1,20 +1,39 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Shanthi Tailors - Measurement Tool
 
-# Run and deploy your AI Studio app
+A digital guide for taking accurate dance costume measurements.
 
-This contains everything you need to run your app locally.
+## ⚠️ Important Deployment Instruction
 
-View your app in AI Studio: https://ai.studio/apps/drive/1CFuDBB83V0xHdqDfSaZuNq8wmfqjYDzC
+**DO NOT DELETE YOUR AUDIO FOLDER.**
 
-## Run Locally
+If you are uploading files manually to GitHub, please ensure your folder structure looks like this:
 
-**Prerequisites:**  Node.js
+```
+/ (Root of repository)
+├── public/               <-- CREATE THIS FOLDER
+│   └── audio/            <-- MOVE YOUR AUDIO FOLDER HERE
+│       ├── waist.wav
+│       ├── ...
+├── src/
+├── package.json
+└── vite.config.ts
+```
 
+**Why?**
+Vite (the build tool) requires static assets like audio files to be placed inside a `public` directory. When the site is built for Netlify, the contents of `public` are copied to the root of the website.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+If you leave `audio` at the root (next to `package.json`), it will **not** be included in the final website, resulting in "File Missing" errors.
+
+## Features
+
+- **Interactive Guide:** Step-by-step instructions with diagrams.
+- **Audio Assistance:** Voice instructions (requires `public/audio` files).
+- **AI Analysis:** Checks measurement proportions using Google Gemini API.
+- **PDF Generation:** Downloads a summary for the tailor.
+- **WhatsApp Integration:** Pre-fills a message to send the PDF.
+
+## Development
+
+1. Install dependencies: `npm install`
+2. Run dev server: `npm run dev`
+3. Build for production: `npm run build`

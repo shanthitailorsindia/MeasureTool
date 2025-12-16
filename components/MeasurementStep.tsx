@@ -202,26 +202,24 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
     };
 
     // Helper: Fetch a static audio file
-    const fetchStaticAudio = async (id: string): Promise<AudioBuffer> => {
+    const fetchStaticAudio = async (id: string, hardcodedUrl?: string): Promise<AudioBuffer> => {
          if (!audioContext) throw new Error("No AudioContext");
 
-         // 1. Check Virtual Cache (Loaded via "Load Files" button)
+         // 1. Check Virtual Cache (Loaded via "Load Files" button or previously fetched)
          if (audioCache[id]) {
-            // It's a Data URL string, fetch reads it automatically
             const response = await fetch(audioCache[id]);
             const arrayBuffer = await response.arrayBuffer();
             return await audioContext.decodeAudioData(arrayBuffer);
          }
 
-         // 2. Check Real Filesystem (For real server deployment)
-         // Using relative path 'audio/' to support subfolder deployments. 
-         // Ensure your audio files are in 'public/audio/' folder in your project.
-         const url = `audio/${id}.wav`;
+         // 2. Priority: Hardcoded URL from constants.ts (Fixes deployment issues)
+         // 3. Fallback: Local filesystem (for local dev)
+         const url = hardcodedUrl || `/audio/${id}.wav`;
+         
          const response = await fetch(url);
          
          if (!response.ok) {
             console.warn(`Audio fetch failed for ${url} (Status: ${response.status})`);
-            // We do NOT throw here immediately to allow fallback logic in caller
             throw new Error(`MISSING_FILE: ${url}`);
          }
          
@@ -258,22 +256,23 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
             const introCacheKey = `intro_${dancerName}_${measurement.id}`;
             const fullCacheKey = `full_${dancerName}_${measurement.id}`;
 
-            // Check if we have an API key available. If not, we skip the dynamic intro.
+            // Check if we have an API key available.
             const hasApiKey = process.env.API_KEY && process.env.API_KEY.length > 0;
 
-            // --- STRATEGY: Robust Hybrid Audio ---
-            // 1. Always attempt to fetch the Static Instruction File.
-            // 2. If API Key exists, attempt to fetch/generate Personalized Intro concurrently.
-            // 3. Stitch together what we have.
+            // --- STRATEGY ---
+            // 1. Fetch Static Audio (from Hardcoded URL or File).
+            // 2. Try Fetching Personalized Intro (if API Key exists).
+            // 3. Combine.
 
             // Wrapped Static Fetch
             const fetchStaticPromise = async () => {
                 try {
-                    const buffer = await fetchStaticAudio(staticId);
+                    // Pass the audioUrl from the measurement object
+                    const buffer = await fetchStaticAudio(staticId, measurement.audioUrl);
                     return buffer;
                 } catch (e: any) {
                     if (e.message && e.message.includes('MISSING_FILE')) {
-                        console.error(`Audio Error: The file 'public/audio/${staticId}.wav' could not be found.`);
+                        console.error(`Audio Error: Could not find audio at ${measurement.audioUrl || `/audio/${staticId}.wav`}`);
                         return 'missing_file'; 
                     }
                     console.warn(`Static file fetch failed for ${staticId}.`, e);
@@ -283,10 +282,11 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
 
             // Wrapped Intro Gen
             const fetchIntroPromise = async () => {
-                if (!hasApiKey) return null; // Skip if no key, don't error
+                if (!hasApiKey) return null; // Skip if no key
                 try {
                     return await generateGeminiAudio(introText, introCacheKey);
                 } catch (e) {
+                    // Fail silently on intro generation, we still want the main instructions
                     console.warn("Intro generation failed (skipping intro):", e);
                     return null;
                 }
@@ -300,13 +300,12 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
 
             // DECISION LOGIC
             
-            // Scenario 1: File is explicitly missing (404) and we returned the specific flag
+            // Scenario 1: File is explicitly missing (404)
             if (staticResult === 'missing_file') {
                  // If we have an API key, we might be able to fallback to full generation?
                  if (hasApiKey) {
                      console.log("File missing, but API key exists. Attempting full generation fallback.");
                  } else {
-                     // No API key and No File = Fatal Missing File Error
                      setErrorState('missing_file');
                      return;
                  }
@@ -327,9 +326,8 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
                 return;
             }
 
-            // Scenario 3: No static file (either missing or failed) -> Fallback to Full API Generation
+            // Scenario 3: No static file -> Fallback to Full API Generation
             if (hasApiKey) {
-                 // Try generating the full explanation via API
                  const fullBuffer = await generateGeminiAudio(fullTextFallback, fullCacheKey);
                  await playAudioSequence([fullBuffer]);
                  return;
@@ -379,7 +377,7 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
         }
         if (errorState === 'missing_file') {
             return (
-                <span className="text-xs text-red-500 font-bold px-2">File Missing</span>
+                <span className="text-xs text-red-500 font-bold px-2">Link Broken</span>
             );
         }
         if (errorState === 'generic') {
@@ -404,7 +402,7 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
 
     const getButtonTitle = () => {
         if (errorState === 'quota') return "Daily voice generation limit reached.";
-        if (errorState === 'missing_file') return `Audio file missing: public/audio/${measurement.id}.wav`;
+        if (errorState === 'missing_file') return `Audio file not found at URL: ${measurement.audioUrl}`;
         if (errorState === 'generic') return "Audio currently unavailable.";
         return isPlaying ? "Stop audio" : "Play audio explanation";
     };
@@ -427,21 +425,29 @@ const MeasurementStep: React.FC<MeasurementStepProps> = ({
             <div className="flex items-start justify-between gap-4">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-800">{measurement.name}</h2>
                 
-                <button 
-                    onClick={handleVoiceRequest} 
-                    disabled={isAudioLoading || (errorState !== 'none' && errorState !== 'missing_file' && errorState !== 'generic')}
-                    className={`
-                        flex-shrink-0 h-10 min-w-[40px] flex items-center justify-center rounded-full transition-all duration-200
-                        ${errorState === 'none' ? 'hover:bg-indigo-50 text-gray-600 hover:text-indigo-600' : ''}
-                        ${errorState === 'quota' ? 'bg-amber-50 cursor-not-allowed border border-amber-100' : ''}
-                        ${(errorState === 'generic' || errorState === 'missing_file') ? 'bg-red-50 border border-red-100' : ''}
-                        ${isPlaying ? 'bg-indigo-50 text-indigo-600 ring-2 ring-indigo-100' : ''}
-                    `}
-                    aria-label={getButtonTitle()}
-                    title={getButtonTitle()}
-                >
-                    {getButtonContent()}
-                </button>
+                <div className="flex flex-col items-end">
+                    <button 
+                        onClick={handleVoiceRequest} 
+                        disabled={isAudioLoading || (errorState !== 'none' && errorState !== 'missing_file' && errorState !== 'generic')}
+                        className={`
+                            flex-shrink-0 h-10 min-w-[40px] flex items-center justify-center rounded-full transition-all duration-200
+                            ${errorState === 'none' ? 'hover:bg-indigo-50 text-gray-600 hover:text-indigo-600' : ''}
+                            ${errorState === 'quota' ? 'bg-amber-50 cursor-not-allowed border border-amber-100' : ''}
+                            ${(errorState === 'generic' || errorState === 'missing_file') ? 'bg-red-50 border border-red-100' : ''}
+                            ${isPlaying ? 'bg-indigo-50 text-indigo-600 ring-2 ring-indigo-100' : ''}
+                        `}
+                        aria-label={getButtonTitle()}
+                        title={getButtonTitle()}
+                    >
+                        {getButtonContent()}
+                    </button>
+                    {errorState === 'missing_file' && (
+                         <div className="mt-2 p-2 bg-red-100 text-red-800 text-xs rounded max-w-[200px] text-right">
+                            <strong>Connection Error:</strong><br/>
+                            Could not load audio file from external URL. Check constants.ts
+                        </div>
+                    )}
+                </div>
             </div>
 
           <p className="text-gray-600 mt-2 mb-4 text-base">{measurement.description}</p>

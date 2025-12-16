@@ -8,6 +8,7 @@ export interface Measurement {
   imageComponent: React.FC<React.SVGProps<SVGSVGElement>>;
   category: string;
   audioTip: string;
+  audioUrl?: string; // New field for hardcoded URLs
 }
 
 export interface MeasurementWithValue extends Measurement {
