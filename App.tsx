@@ -64,9 +64,13 @@ const App: React.FC = () => {
   });
   
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [showAudioTools, setShowAudioTools] = useState(false);
 
-  // Check for admin flag in URL to show dev tools
-  const showAdminTools = new URLSearchParams(window.location.search).get('admin') === 'true';
+  // Check for admin flag in URL to show dev tools automatically, or rely on toggle
+  const adminFlag = new URLSearchParams(window.location.search).get('admin') === 'true';
+  useEffect(() => {
+      if (adminFlag) setShowAudioTools(true);
+  }, [adminFlag]);
   
   // Step Indices
   const measurementStepsCount = MEASUREMENT_STEPS.length;
@@ -498,15 +502,28 @@ const App: React.FC = () => {
           {renderStep()}
         </main>
       </div>
-       <footer className="text-center mt-12 text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} Shanthi Tailors Pvt. Ltd. All rights reserved.</p>
-          {/* Audio Manager (Generator + Uploader) - Only shown if ?admin=true is in URL */}
-          {showAdminTools && (
-            <AudioAssetsGenerator 
-                onLoadFiles={(files) => {
-                    files.forEach(f => handleAddToCache(f.name.replace('.wav', ''), f.data));
-                }}
-            />
+       <footer className="text-center mt-12 text-gray-400 text-sm pb-8">
+          <p className="mb-4">&copy; {new Date().getFullYear()} Shanthi Tailors Pvt. Ltd. All rights reserved.</p>
+          
+          <button 
+            onClick={() => setShowAudioTools(!showAudioTools)}
+            className="text-xs text-indigo-400 hover:text-indigo-600 underline"
+          >
+            {showAudioTools ? 'Hide Audio Manager' : 'Manage Audio Assets'}
+          </button>
+
+          {/* Audio Manager (Generator + Uploader) */}
+          {showAudioTools && (
+            <div className="mt-4 animate-fade-in">
+                <AudioAssetsGenerator 
+                    onLoadFiles={(files) => {
+                        files.forEach(f => handleAddToCache(f.name.replace('.wav', ''), f.data));
+                        // Close tool after loading to confirm success visually
+                        alert(`Loaded ${files.length} audio files into memory.`);
+                        setShowAudioTools(false); 
+                    }}
+                />
+            </div>
           )}
       </footer>
     </div>
