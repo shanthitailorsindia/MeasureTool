@@ -5,8 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  // Fix: Use '.' instead of process.cwd() to resolve missing type definition for cwd
   const env = loadEnv(mode, '.', '');
+
+  // Priority: Check system environment variables (Netlify) first, then loaded .env variables
+  const apiKey = process.env.API_KEY || env.API_KEY;
 
   return {
     plugins: [react()],
@@ -16,7 +18,7 @@ export default defineConfig(({ mode }) => {
     base: '/',
     define: {
       // Expose API_KEY to the client-side code by replacing process.env.API_KEY with the string value
-      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+      'process.env.API_KEY': JSON.stringify(apiKey)
     }
   }
 })

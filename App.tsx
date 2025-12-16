@@ -70,6 +70,13 @@ const App: React.FC = () => {
   const adminFlag = new URLSearchParams(window.location.search).get('admin') === 'true';
   useEffect(() => {
       if (adminFlag) setShowAudioTools(true);
+
+      // Debugging: Log if API Key is present (Do not log the key itself for security)
+      if (process.env.API_KEY) {
+        console.log("✅ API Key successfully loaded from environment.");
+      } else {
+        console.error("❌ API Key missing from environment. App will fallback to offline mode.");
+      }
   }, [adminFlag]);
   
   // Step Indices
@@ -185,14 +192,20 @@ const App: React.FC = () => {
 
     const generateWithModel = async (modelName: string) => {
         if (!process.env.API_KEY) {
+            console.error("Critical Error: process.env.API_KEY is missing or empty.");
             throw new Error("API Key is missing. Check your environment variables.");
         }
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: modelName,
-            contents: prompt,
-        });
-        return response.text;
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: modelName,
+                contents: prompt,
+            });
+            return response.text;
+        } catch (e: any) {
+            console.error(`Gemini API Error (${modelName}):`, e);
+            throw e; // Rethrow to let the main try/catch handle fallback
+        }
     };
 
     try {
@@ -200,7 +213,7 @@ const App: React.FC = () => {
         const result = await generateWithModel('gemini-2.5-flash');
         setAnalysisResult(result);
     } catch (error: any) {
-        console.warn("Gemini Flash analysis failed, trying fallback:", error);
+        console.warn("Primary analysis failed, attempting fallback strategy...", error);
         
         // If error is related to Quota or Billing, skip straight to local analysis
         if (error.toString().includes("429") || error.toString().includes("RESOURCE_EXHAUSTED")) {
@@ -214,7 +227,7 @@ const App: React.FC = () => {
             const result = await generateWithModel('gemini-3-pro-preview');
             setAnalysisResult(result);
         } catch (fallbackError) {
-            console.error("Fallback to Gemini Pro also failed, using local logic:", fallbackError);
+            console.error("All AI analysis attempts failed. Using offline local logic.", fallbackError);
             const localResult = performLocalAnalysis(measurements, dancerName);
             setAnalysisResult(localResult);
         }
