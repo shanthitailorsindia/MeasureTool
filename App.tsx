@@ -70,13 +70,6 @@ const App: React.FC = () => {
   const adminFlag = new URLSearchParams(window.location.search).get('admin') === 'true';
   useEffect(() => {
       if (adminFlag) setShowAudioTools(true);
-
-      // Debugging: Log if API Key is present (Do not log the key itself for security)
-      if (process.env.API_KEY) {
-        console.log("✅ API Key successfully loaded from environment.");
-      } else {
-        console.error("❌ API Key missing from environment. App will fallback to offline mode.");
-      }
   }, [adminFlag]);
   
   // Step Indices
@@ -191,21 +184,13 @@ const App: React.FC = () => {
     `;
 
     const generateWithModel = async (modelName: string) => {
-        if (!process.env.API_KEY) {
-            console.error("Critical Error: process.env.API_KEY is missing or empty.");
-            throw new Error("API Key is missing. Check your environment variables.");
-        }
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: modelName,
-                contents: prompt,
-            });
-            return response.text;
-        } catch (e: any) {
-            console.error(`Gemini API Error (${modelName}):`, e);
-            throw e; // Rethrow to let the main try/catch handle fallback
-        }
+        // process.env.API_KEY is replaced by vite define
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+        });
+        return response.text;
     };
 
     try {

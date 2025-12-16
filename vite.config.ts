@@ -1,14 +1,10 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-  const env = loadEnv(mode, '.', '');
-
-  // Priority: Check system environment variables (Netlify) first, then loaded .env variables
-  const apiKey = process.env.API_KEY || env.API_KEY;
+  // Hardcoded API Key
+  const apiKey = 'AIzaSyCIuCXgjAQ91rGtTLHGjDWCdFPX5Oz7R7I';
 
   return {
     plugins: [react()],
